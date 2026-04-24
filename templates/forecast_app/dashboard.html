@@ -1,0 +1,332 @@
+{% extends 'forecast_app/base.html' %}
+{% block content %}
+{% load humanize %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+/* Pulse Animation for High Risk Months */
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+}
+
+.risk-pulse {
+    animation: pulse-red 2s infinite;
+    border: 2px solid #e11d48 !important; 
+    transition: all 0.3s ease;
+}
+
+#ai-results-card, #ai-suggestion-card, #identity-card, #stress-card {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.audit-note {
+    font-size: 0.75rem;
+    margin-top: 8px;
+    padding: 10px;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+    color: #475569;
+    line-height: 1.4;
+}
+.note-highlight { font-weight: 700; color: #e11d48; }
+
+.trend-item-box {
+    margin-bottom: 1rem;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 4px solid #cbd5e1;
+    transition: transform 0.2s ease;
+}
+.trend-item-box:hover {
+    transform: translateX(5px);
+}
+.trend-reason {
+    font-size: 0.72rem;
+    color: #64748b;
+    margin-top: 4px;
+    display: block;
+    line-height: 1.3;
+}
+</style>
+
+<div style="background-color: #f8fafc; min-height: 100vh; padding: 2rem; font-family: 'Inter', sans-serif;">
+    <div style="max-width: 1200px; margin: 0 auto;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div>
+                <h2 style="font-size: 2.25rem; font-weight: 800; color: #0f172a; margin: 0;">Financial Dashboard</h2>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 0.5rem;">
+                    <p style="color: #64748b; margin: 0;">Prophet ML-Driven Predictive Insights</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <a href="{% url 'add_income' %}" style="padding: 0.6rem 1.2rem; background-color: #059669; color: white; border-radius: 0.75rem; text-decoration: none; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">+ Income</a>
+                <a href="{% url 'add_expense' %}" style="padding: 0.6rem 1.2rem; background-color: #e11d48; color: white; border-radius: 0.75rem; text-decoration: none; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">+ Expense</a>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div style="background: white; padding: 1.5rem; border-radius: 1.5rem; border: 2px solid #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="color: #94a3b8; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Current Balance</h3>
+                <p style="font-size: 2rem; font-weight: 800; color: #1e293b; margin: 0;">₹{{ current_balance|floatformat:2|intcomma }}</p>
+            </div>
+
+            <div style="background: #1e293b; padding: 1.5rem; border-radius: 1.5rem; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+                <div>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; margin:0;">Forecast Engine</h3>
+                    <p style="font-size: 0.75rem; color: #94a3b8; margin: 2px 0 0 0;">Analyzing future liquidity trends</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <select id="ai-year" style="background: #334155; border: 1px solid #475569; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; outline: none;"></select>
+                    <select id="ai-month" style="background: #334155; border: 1px solid #475569; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; outline: none;"></select>
+                    <button onclick="loadAIPrediction()" style="background: #6366f1; color: white; padding: 0.5rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 700; cursor: pointer; transition: transform 0.2s;">Run Model</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="ai-output" style="display:none;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div id="ai-results-card" style="background: white; padding: 1.5rem; border-radius: 1.5rem; border: 2px solid #f1f5f9;">
+                    <div id="ai-results-content"></div>
+                </div>
+
+                <div id="ai-suggestion-card" style="background: white; padding: 1.25rem; border-radius: 1rem; border: 2px solid #f1f5f9; display: flex; flex-direction: column;">
+                    <h4 style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">AI Audit Suggestion</h4>
+                    <div id="ai-anomaly" style="font-size: 0.95rem; font-weight: 800; margin-bottom: 0.5rem;"></div>
+                    <div id="ai-suggestion" style="font-size: 0.85rem; color: #475569; padding: 1rem; background: #f8fafc; border-radius: 0.75rem; border-left: 4px solid #6366f1; line-height: 1.5; margin-bottom: 15px;"></div>
+                    
+                    <div id="audit-insights" style="margin-top: auto;">
+                        <h5 style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; margin-bottom: 6px;">Root Cause Analysis</h5>
+                        <div id="net-cash-note" class="audit-note"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="background: white; padding: 1.5rem; border-radius: 1.5rem; border: 2px solid #f1f5f9;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">📊 Spending Forecast per Category</h3>
+                    <div style="height: 250px; width: 100%;">
+                        <canvas id="spendingChart"></canvas>
+                    </div>
+                </div>
+                
+                <div style="background: white; padding: 1.5rem; border-radius: 1.5rem; border: 2px solid #f1f5f9;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <h3 id="trend-title" style="font-size: 1.1rem; font-weight: 700; margin: 0;">📉 Spending Velocity Analysis</h3>
+                        <div id="ai-drift-badge" style="font-weight: 800; font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; text-transform: uppercase;"></div>
+                    </div>
+                    <div id="ai-trends" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;"></div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div id="stress-card" style="background: white; padding: 1.5rem; border-radius: 1.5rem; border: 2px solid #f1f5f9; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <h4 style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5rem; font-weight: 700;">Financial Stress</h4>
+                    <div id="ai-stress" style="font-size: 1.5rem; font-weight: 800;"></div>
+                    <p style="font-size: 0.7rem; color: #64748b; margin-top: 5px;">Based on liquidity forecast</p>
+                </div>
+
+                <div id="identity-card" style="background: #4f46e5; padding: 1.5rem; border-radius: 1.5rem; color: white; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <h4 style="font-size: 0.75rem; color: #e0e7ff; text-transform: uppercase; margin-bottom: 0.5rem; font-weight: 700;">Wealth Identity</h4>
+                    <div id="ai-persona" style="font-size: 1.25rem; font-weight: 700;"></div>
+                    <div style="font-size: 0.65rem; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px; margin-top: 10px;">Prophet Profile</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let spendingChartInstance = null;
+
+async function safeFetch(url) {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+        return await res.json();
+    } catch (e) { 
+        console.error(`Fetch error for ${url}:`, e);
+        return { status: "error" }; 
+    }
+}
+
+async function loadAIPrediction() {
+    const month = parseInt(document.getElementById("ai-month").value);
+    const year = parseInt(document.getElementById("ai-year").value);
+    const ts = new Date().getTime(); 
+    
+    document.getElementById("ai-output").style.display = "block";
+    const trendsDiv = document.getElementById("ai-trends");
+    trendsDiv.innerHTML = "<p style='color:#94a3b8;'>Running Prophet Model...</p>";
+
+    const cash = await safeFetch(`/ai/cashflow/?month=${month}&year=${year}&t=${ts}`);
+
+    const [trend, anomaly, personality, stressData] = await Promise.all([
+        safeFetch(`/ai/category-trend/?month=${month}&year=${year}&t=${ts}`),
+        safeFetch(`/ai/expense-anomaly/?month=${month}&year=${year}&t=${ts}`),
+        safeFetch(`/ai/financial-personality/?month=${month}&year=${year}&t=${ts}`),
+        safeFetch(`/ai/financial-stress-timeline/?month=${month}&year=${year}&t=${ts}`)
+    ]);
+
+    // --- PROPORTIONAL SCALING & FILTERING LOGIC ---
+    const rawSum = trend.values ? trend.values.reduce((a, b) => a + b, 0) : 0;
+    const targetTotal = cash.expected_expense || 0;
+    const scaleFactor = (rawSum > 0) ? (targetTotal / rawSum) : 1;
+
+    // Build the processed dataset
+    const processedCategories = (trend.labels || []).map((label, idx) => {
+        const originalTrend = trend.category_trends.find(t => t.category === label);
+        const scaledVal = trend.values[idx] * scaleFactor;
+        return {
+            label: label,
+            value: scaledVal,
+            isRising: originalTrend ? originalTrend.is_rising : false
+        };
+    }).filter(item => item.value > 0); // ONLY SHOW ITEMS > 0
+
+    const dynamicNetCash = (cash.expected_income || 0) - targetTotal;
+    const isHighRisk = trend.is_high_risk;
+
+    // --- 1. Balanced Forecast Card ---
+    document.getElementById("ai-results-card").style.backgroundColor = isHighRisk ? "#fff1f2" : "white";
+    document.getElementById("ai-results-content").innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: #334155; margin: 0;">ML Forecast: ${month}/${year}</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+            ${generateMetricBox("Expected Income", cash.expected_income, "#1e293b")}
+            ${generateMetricBox("Expected Expense", targetTotal, "#1e293b")}
+            ${generateMetricBox("Expected Net", dynamicNetCash, dynamicNetCash < 0 ? '#e11d48' : '#059669')}
+            
+            <div style="background: white; padding: 0.8rem; border-radius: 0.8rem; border: 2px solid ${cash.risk_color || '#cbd5e1'}; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                <p style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; font-weight:700;">Risk Index</p>
+                <p style="font-size: 1.1rem; font-weight: 800; color: ${cash.risk_color || '#1e293b'}; margin:0;">${cash.risk_percent || 0}%</p>
+                <div style="font-size: 0.55rem; color: #94a3b8; font-weight: 700; margin-top: 4px; border-top: 1px dashed #f1f5f9; padding-top: 4px;">
+                    ${cash.risk_level || 'Calculating...'}
+                </div>
+            </div>
+        </div>`;
+
+    function generateMetricBox(label, val, color) {
+        return `
+            <div style="background: white; padding: 1.2rem 0.8rem; border-radius: 0.8rem; border: 1px solid #e2e8f0; text-align: center;">
+                <p style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; font-weight:700;">${label}</p>
+                <p style="font-size: 1.1rem; font-weight: 800; color: ${color}; margin:0;">₹${val?.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) || 0}</p>
+            </div>`;
+    }
+
+    // --- 2. Chart Section (Filtered) ---
+    if (processedCategories.length > 0) {
+        const ctx = document.getElementById('spendingChart').getContext('2d');
+        if (spendingChartInstance) spendingChartInstance.destroy();
+        
+        spendingChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: processedCategories.map(c => c.label),
+                datasets: [{
+                    label: 'Predicted Spend',
+                    data: processedCategories.map(c => c.value),
+                    backgroundColor: processedCategories.map(c => c.isRising ? '#e11d48' : '#059669'),
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => ` Forecasted: ₹${context.raw.toLocaleString(undefined, {minimumFractionDigits: 2})}`
+                        }
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: '#f1f5f9' },
+                        ticks: { callback: (value) => '₹' + value.toLocaleString() }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // --- 3. Velocity Analysis (Filtered List) ---
+        trendsDiv.innerHTML = processedCategories.map(item => {
+            const statusColor = item.isRising ? "#e11d48" : "#059669";
+            return `
+                <div class="trend-item-box" style="border-left-color: ${statusColor}">
+                    <div style="color: ${statusColor}; font-weight: 700; font-size: 0.9rem; display: flex; justify-content: space-between;">
+                        <span>${item.isRising ? "📈" : "📊"} ${item.label}</span>
+                        <span>₹${item.value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                    <span class="trend-reason">${item.isRising ? "High spending velocity detected." : "Pattern aligns with historical averages."}</span>
+                </div>`;
+        }).join("");
+
+        const driftBadge = document.getElementById("ai-drift-badge");
+        driftBadge.innerText = isHighRisk ? "UNSTABLE TRENDS" : "STABLE FLOW";
+        driftBadge.style.color = isHighRisk ? "#e11d48" : "#059669";
+        driftBadge.style.backgroundColor = isHighRisk ? "#fff1f2" : "#f0fdf4";
+    } else {
+        trendsDiv.innerHTML = `<p style="grid-column: span 2; color:#94a3b8; font-style:italic; text-align:center; padding: 20px;">No active spending detected.</p>`;
+    }
+
+    // --- 4. Suggestions & Risk ---
+    const netCashNote = document.getElementById("net-cash-note");
+    if (dynamicNetCash < 0) {
+        const realGap = ((targetTotal / (cash.expected_income || 1) - 1) * 100).toFixed(1);
+        netCashNote.innerHTML = `📌 <span class="note-highlight">Deficit Warning:</span> Expenses exceed income by <b>${realGap}%</b>.`;
+    } else {
+        const savingsRate = (cash.expected_income > 0) ? ((dynamicNetCash / cash.expected_income) * 100).toFixed(1) : 0;
+        netCashNote.innerHTML = `📌 <span style="color:#059669; font-weight:700;">Safe Buffer:</span> Predicted <b>${savingsRate}% savings rate</b>.`;
+    }
+
+    const sugCard = document.getElementById("ai-suggestion-card");
+    const anomalyEl = document.getElementById("ai-anomaly");
+    const suggestionEl = document.getElementById("ai-suggestion");
+
+    if (!isHighRisk) {
+        sugCard.classList.remove("risk-pulse");
+        anomalyEl.style.color = "#059669";
+        anomalyEl.innerHTML = "✓ Optimal Spending Plan";
+        suggestionEl.innerText = "Forecasted surplus is ₹" + (dynamicNetCash || 0).toLocaleString() + ". All items are balanced.";
+    } else {
+        sugCard.classList.add("risk-pulse");
+        anomalyEl.style.color = "#e11d48";
+        anomalyEl.innerHTML = "🚨 Predicted Cash Gap";
+        suggestionEl.innerText = anomaly.suggestion || "Total expenses are trending higher than income.";
+    }
+
+    // --- 5. Final Indicators ---
+    document.getElementById("ai-stress").innerText = stressData.stress || (isHighRisk ? "Critical" : "Healthy");
+    document.getElementById("ai-stress").style.color = isHighRisk ? '#e11d48' : '#059669';
+    document.getElementById("ai-persona").innerText = personality.personality || "Steady Planner";
+    document.getElementById("identity-card").style.backgroundColor = isHighRisk ? "#e11d48" : "#4f46e5";
+}
+
+// Date Selector Initialization
+const mS = document.getElementById("ai-month"), yS = document.getElementById("ai-year");
+const currentYear = new Date().getFullYear();
+for (let y = currentYear; y <= currentYear + 4; y++) { yS.innerHTML += `<option value="${y}">${y}</option>`; }
+yS.value = 2026; 
+
+function populateMonths() {
+    const selectedYear = parseInt(yS.value);
+    mS.innerHTML = "";
+    for (let m = 1; m <= 12; m++) {
+        const name = new Date(selectedYear, m - 1).toLocaleString('default', { month: 'short' });
+        mS.innerHTML += `<option value="${m}">${name}</option>`;
+    }
+}
+populateMonths();
+yS.addEventListener("change", populateMonths);
+</script>
+{% endblock %}

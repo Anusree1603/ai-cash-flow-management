@@ -1,0 +1,87 @@
+{% extends 'forecast_app/base.html' %}
+{% block content %}
+
+<!-- Low Income Alert -->
+{% if total_income_alert %}
+<div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg flex justify-between items-start">
+    <div>
+        <p class="font-semibold text-red-700">⚠ Total Income Alert</p>
+        <p class="text-sm text-red-600">
+            Total income is <strong>₹{{ total_income }}</strong>, which is below
+            ₹{{ low_income_limit }}.
+        </p>
+    </div>
+    <button onclick="this.parentElement.remove()" class="text-red-600 font-bold">✖</button>
+</div>
+{% endif %}
+
+<!-- Header -->
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h2 class="text-3xl font-bold text-gray-800">Income List</h2>
+        <p class="text-gray-500 mt-1">
+            💰 Total Income: <strong>₹{{ total_income }}</strong>
+        </p>
+    </div>
+
+    <div class="flex gap-3">
+
+        <a href="{% url 'incpy' %}"
+           class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+            + Add Income
+        </a>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="bg-white rounded-xl shadow-md overflow-hidden">
+    <table class="w-full text-sm text-left">
+        <thead class="bg-gray-100 text-gray-700">
+            <tr>
+                <th class="px-4 py-3">Amount</th>
+                <th class="px-4 py-3">Date</th>
+                <th class="px-4 py-3">Category</th>
+                <th class="px-4 py-3">Type</th>
+                <th class="px-4 py-3">Payment</th>
+                <th class="px-4 py-3">Description</th>
+                <th class="px-4 py-3 text-center">Edit</th>
+                <th class="px-4 py-3 text-center">Delete</th>
+            </tr>
+        </thead>
+
+        <tbody class="divide-y">
+            {% for inc in incs %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-4 py-3 font-semibold text-green-600">₹{{ inc.amount }}</td>
+                <td class="px-4 py-3">{{ inc.date }}</td>
+                <td class="px-4 py-3">{{ inc.category.category_name }}</td>
+                <td class="px-4 py-3">{{ inc.category.category_type }}</td>
+                <td class="px-4 py-3">{{ inc.payment_mode }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ inc.description }}</td>
+
+                <td class="px-4 py-3 text-center">
+                    <a href="{% url 'incup' inc.id %}"
+                       class="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Edit
+                    </a>
+                </td>
+
+                <td class="px-4 py-3 text-center">
+                    <a href="{% url 'incdl' inc.id %}"
+                       class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center py-6 text-gray-500">
+                    No income records found
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

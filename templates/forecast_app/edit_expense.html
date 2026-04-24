@@ -1,0 +1,78 @@
+{% extends "forecast_app/base.html" %}
+{% block content %}
+
+<style>
+.form-page{max-width:760px;margin:20px auto;}
+.form-card{background:#fff;border-radius:14px;padding:32px 36px;box-shadow:0 10px 30px rgba(0,0,0,.06);}
+.form-title{font-size:26px;font-weight:700;margin-bottom:4px;}
+.form-subtitle{color:#6c757d;margin-bottom:28px;}
+.form-label{font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.form-label .icon{color:#ef4444;font-size:18px;}
+.form-control,.form-select,textarea{border-radius:10px!important;padding:12px 14px!important;border:1px solid #d1d5db!important;}
+.form-control:focus,.form-select:focus,textarea:focus{border-color:#ef4444!important;box-shadow:0 0 0 2px rgba(239,68,68,.15)!important;}
+.primary-btn{background:#ef4444;border:none;padding:10px 26px;border-radius:10px;color:#fff;font-weight:600;}
+.primary-btn:hover{background:#dc2626;}
+.secondary-btn{background:#f3f4f6;border:none;padding:10px 22px;border-radius:10px;font-weight:600;}
+</style>
+
+<div class="form-page">
+  <div class="form-card">
+
+    <h2 class="form-title">Edit Expense</h2>
+    <p class="form-subtitle">Update your expense record</p>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="mb-4">
+        <label class="form-label"><span class="icon">₹</span> Amount *</label>
+        <input type="number" name="amount" step="0.01"
+               class="form-control" value="{{ expense.amount }}" required>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label"><span class="icon">🏷</span> Category *</label>
+        <select name="category" class="form-select" required>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}"
+            {% if expense.category_id == cat.id %}selected{% endif %}>
+            {{ cat.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label"><span class="icon">💳</span> Payment Mode *</label>
+        <select name="payment_mode" class="form-select" required>
+          {% for pm in payment_modes %}
+          <option value="{{ pm.id }}"
+            {% if expense.payment_mode_id == pm.id %}selected{% endif %}>
+            {{ pm.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label"><span class="icon">📅</span> Date *</label>
+        <input type="date" name="date" class="form-control"
+               value="{{ expense.date|date:'Y-m-d' }}" required>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label"><span class="icon">📝</span> Description</label>
+        <textarea name="description" rows="3"
+                  class="form-control">{{ expense.description }}</textarea>
+      </div>
+
+      <div class="text-end">
+        <a href="{% url 'expense_list' %}" class="secondary-btn me-2">Cancel</a>
+        <button class="primary-btn">Update Expense</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}

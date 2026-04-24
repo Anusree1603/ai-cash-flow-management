@@ -1,0 +1,104 @@
+{% extends 'forecast_app/base.html' %}
+{% block content %}
+
+<!-- Expense Alert -->
+{% if total_expense_alert %}
+<div id="totalExpensePopup"
+     class="mb-6 p-4 rounded-lg bg-red-50 border-l-4 border-red-500 flex justify-between items-start">
+    <div>
+        <p class="font-semibold text-red-700">
+            ⚠ Total Expense Alert!
+        </p>
+        <p class="text-sm text-gray-700 mt-1">
+            Total expense is <strong>₹{{ total_expense }}</strong>,
+            which is above <strong>₹{{ high_expense_limit }}</strong>.
+        </p>
+    </div>
+    <button onclick="closeTotalExpense()"
+            class="text-red-600 font-bold hover:text-red-800">
+        ✖
+    </button>
+</div>
+{% endif %}
+
+<!-- Header -->
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h2 class="text-3xl font-bold text-gray-800">Expense List</h2>
+        <p class="text-gray-500 mt-1">
+            💸 Total Expense: <strong>₹{{ total_expense }}</strong>
+        </p>
+    </div>
+
+    <div class="flex gap-3">
+        
+        <a href="{% url 'exppy' %}"
+           class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">
+            + Add Expense
+        </a>
+    </div>
+</div>
+
+<!-- Expense Table Card -->
+<div class="bg-white rounded-xl shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-sm text-left">
+            <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
+                <tr>
+                    <th class="px-4 py-3">Amount</th>
+                    <th class="px-4 py-3">Date</th>
+                    <th class="px-4 py-3">Category</th>
+                    <th class="px-4 py-3">Type</th>
+                    <th class="px-4 py-3">Payment</th>
+                    <th class="px-4 py-3">Description</th>
+                    <th class="px-4 py-3 text-center">Edit</th>
+                    <th class="px-4 py-3 text-center">Delete</th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-200">
+                {% for exp in expns %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-semibold text-red-600">
+                        ₹{{ exp.amount }}
+                    </td>
+                    <td class="px-4 py-3">{{ exp.date }}</td>
+                    <td class="px-4 py-3">{{ exp.category_name }}</td>
+                    <td class="px-4 py-3">{{ exp.category_type }}</td>
+                    <td class="px-4 py-3">{{ exp.payment_mode }}</td>
+                    <td class="px-4 py-3 text-gray-600">
+                        {{ exp.description|default:"—" }}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <a href="{% url 'expup' exp.id %}"
+                           class="px-3 py-1 rounded-md bg-blue-500 text-white hover:bg-blue-600 text-xs">
+                            Edit
+                        </a>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <a href="{% url 'expdl' exp.id %}"
+                           class="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 text-xs">
+                            Delete
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="px-4 py-6 text-center text-gray-500">
+                        No expenses recorded yet
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Alert Close Script -->
+<script>
+function closeTotalExpense() {
+    document.getElementById("totalExpensePopup").style.display = "none";
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'forecast_app/base.html' %}
+{% block content %}
+
+<!-- Header -->
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h2 class="text-3xl font-bold text-gray-800">Update Payable</h2>
+        <p class="text-gray-500 mt-1">Modify payable details</p>
+    </div>
+
+    <a href="{% url 'paytable' %}"
+       class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800">
+        ← Back to List
+    </a>
+</div>
+
+<div class="flex justify-center">
+    <div class="w-full max-w-xl bg-white rounded-xl shadow-md p-8">
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            <input class="w-full border rounded-lg px-3 py-2" name="party_name" value="{{ payer.party_name }}">
+            <input class="w-full border rounded-lg px-3 py-2" type="number" name="amount" value="{{ payer.amount }}">
+            <input class="w-full border rounded-lg px-3 py-2" type="date" name="due_date" value="{{ payer.due_date }}">
+            <input class="w-full border rounded-lg px-3 py-2" name="description" value="{{ payer.description }}">
+            <label class="flex items-center gap-2 mt-2">
+    <input type="checkbox"
+           name="is_paid"
+           class="w-4 h-4"
+           {% if payer.is_paid %}checked{% endif %}>
+    Mark as Paid
+</label>
+
+            <input class="w-full border rounded-lg px-3 py-2" type="date" name="paid_date" value="{{ payer.paid_date }}">
+
+            <div class="flex justify-end gap-3 pt-4">
+                <a href="{% url 'paytable' %}" class="px-5 py-2 bg-gray-200 rounded-lg">Cancel</a>
+                <button type="submit" class="px-6 py-2 bg-red-600 text-white rounded-lg">
+                    Update
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

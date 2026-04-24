@@ -1,0 +1,199 @@
+{% extends 'forecast_app/base.html' %}
+{% block content %}
+
+<style>
+.alert-card{
+    background:#fff;
+    border-radius:8px;
+    padding:15px 18px;
+    margin-bottom:15px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+}
+.alert-danger{border-left:5px solid #dc3545;background:#fff5f5;}
+.alert-warning{border-left:5px solid #f59e0b;background:#fffbeb;}
+.alert-success{border-left:5px solid #10b981;background:#ecfdf5;}
+
+/* toggle */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 22px;
+}
+.switch input {opacity:0;width:0;height:0;}
+.slider {
+  position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+  background:#ccc;transition:.3s;border-radius:30px;
+}
+.slider:before {
+  position:absolute;content:"";
+  height:16px;width:16px;left:3px;bottom:3px;
+  background:white;transition:.3s;border-radius:50%;
+}
+input:checked + .slider {background:#2563eb;}
+input:checked + .slider:before {transform:translateX(20px);}
+</style>
+
+<div style="padding:20px;max-width:900px;">
+<h2 class="text-3xl font-bold text-gray-800">Alerts & Notifications</h2>
+<p style="color:#6b7280;">Important financial warnings and system alerts</p>
+ <!-- ================= INCOME ALERT ================= -->
+ <!-- ================= INCOME ALERT ================= -->
+<div class="alert-card 
+{% if setting.income_alert_enabled and income_alert %}
+    alert-danger
+{% elif setting.income_alert_enabled %}
+    alert-success
+{% else %}
+    alert-danger
+{% endif %}
+">
+  <div>
+    <strong>⚠️ Total Income Alert</strong><br>
+
+    {% if not setting.income_alert_enabled %}
+        <span style="color:#9ca3af;">Income alert is turned off</span>
+
+    {% else %}
+        {% if income_alert %}
+            Total income is ₹{{ total_income }} which is below ₹{{ income_limit }}.
+        {% else %}
+            <span style="color:#10b981;">✅ All good! Income is within the limit.</span>
+        {% endif %}
+    {% endif %}
+  </div>
+
+  <form method="post" action="{% url 'toggle_single_alert' 'income' %}">
+    {% csrf_token %}
+    <label class="switch">
+      <input type="checkbox"
+             onchange="this.form.submit()"
+             {% if setting.income_alert_enabled %}checked{% endif %}>
+      <span class="slider"></span>
+    </label>
+  </form>
+</div>
+
+
+<!-- ================= EXPENSE ALERT ================= -->
+<!-- ================= EXPENSE ALERT ================= -->
+<div class="alert-card 
+{% if setting.expense_alert_enabled and expense_alert %}
+    alert-danger
+{% elif setting.expense_alert_enabled %}
+    alert-success
+{% else %}
+    alert-danger
+{% endif %}
+">
+  <div>
+    <strong>⚠️ Total Expense Alert</strong><br>
+
+    {% if not setting.expense_alert_enabled %}
+        <span style="color:#9ca3af;">Expense alert is turned off</span>
+
+    {% else %}
+        {% if expense_alert %}
+            Total expense is ₹{{ total_expense }} which exceeds ₹{{ expense_limit }}.
+        {% else %}
+            <span style="color:#10b981;">✅ All good! Expense is within the limit.</span>
+        {% endif %}
+    {% endif %}
+  </div>
+
+  <form method="post" action="{% url 'toggle_single_alert' 'expense' %}">
+    {% csrf_token %}
+    <label class="switch">
+      <input type="checkbox"
+             onchange="this.form.submit()"
+             {% if setting.expense_alert_enabled %}checked{% endif %}>
+      <span class="slider"></span>
+    </label>
+  </form>
+</div>
+
+<!-- ================= RECEIVABLE ALERT ================= -->
+<div class="alert-card alert-warning">
+  <div>
+    <strong>⚠️ Pending Receivable Alert</strong>
+
+    {% if setting.receivable_alert_enabled %}
+      {% if pending_receivables %}
+        <ul style="margin-top:6px;">
+          {% for r in pending_receivables %}
+            <li>{{ r.party_name }} – ₹{{ r.amount }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div style="color:#9ca3af;margin-top:6px;">
+          No pending receivables
+        </div>
+      {% endif %}
+    {% else %}
+      <div style="color:#9ca3af;margin-top:6px;">
+        Receivable alert is turned off
+      </div>
+    {% endif %}
+  </div>
+
+  <form method="post" action="{% url 'toggle_single_alert' 'receivable' %}">
+    {% csrf_token %}
+    <label class="switch">
+      <input type="checkbox"
+             onchange="this.form.submit()"
+             {% if setting.receivable_alert_enabled %}checked{% endif %}>
+      <span class="slider"></span>
+    </label>
+  </form>
+</div>
+
+
+<!-- ================= PAYABLE ALERT ================= -->
+<div class="alert-card alert-warning">
+  <div>
+    <strong>⚠️ Pending Payable Alert</strong>
+
+    {% if setting.payable_alert_enabled %}
+      {% if pending_payables %}
+        <ul style="margin-top:6px;">
+          {% for p in pending_payables %}
+            <li>{{ p.party_name }} – ₹{{ p.amount }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div style="color:#9ca3af;margin-top:6px;">
+          No pending payables
+        </div>
+      {% endif %}
+    {% else %}
+      <div style="color:#9ca3af;margin-top:6px;">
+        Payable alert is turned off
+      </div>
+    {% endif %}
+  </div>
+
+  <form method="post" action="{% url 'toggle_single_alert' 'payable' %}">
+    {% csrf_token %}
+    <label class="switch">
+      <input type="checkbox"
+             onchange="this.form.submit()"
+             {% if setting.payable_alert_enabled %}checked{% endif %}>
+      <span class="slider"></span>
+    </label>
+  </form>
+</div>
+
+<!-- ================= NO ALERT ================= -->
+{% if not income_alert and not expense_alert and not pending_receivables and not pending_payables %}
+<div class="alert-card alert-success">
+  <div>
+    <strong>✅ All Good!</strong><br>
+    No alerts at the moment.
+  </div>
+</div>
+{% endif %}
+
+</div>
+{% endblock %}

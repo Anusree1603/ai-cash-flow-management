@@ -1,0 +1,22 @@
+{% extends 'forecast_app/base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+        <div class="col-md-6">
+            <a href="{% url 'extable' %}" class="btn btn-primary"><i class="fas fa-arrow-left"></i>Return to List</a><br><br>
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="ms-3">Register</h2>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <!-- {{form.as_p}} -->
+                         <div class="log">
+                           category_name:<input type="text" name="category_name" value="{{cattr.category_name}}"><br><br>
+                           category_type:<input type="text" name="category_type" value="{{cattr.category_type}}"><br><br>
+                         </div>
+                        <button type="submit">Enter</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div> 
+{% endblock %}

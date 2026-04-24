@@ -1,0 +1,18 @@
+{% extends 'forecast_app/base.html' %}
+{% block content %}
+{% load humanize %}
+<div class="max-w-3xl mx-auto mt-10 bg-white rounded-xl shadow-md p-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Average Monthly Expense</h2>
+    <p class="text-gray-500 mb-6">Calculated from last 12 months</p>
+
+    <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg">
+        <p class="text-sm text-red-700 font-semibold mb-2">
+            💸 Your Average Monthly Expense
+        </p>
+        <p class="text-4xl font-bold text-red-700">
+            ₹{{ avg_monthly_expense|floatformat:2|intcomma  }}
+        </p>
+    </div>
+</div>
+
+{% endblock %}

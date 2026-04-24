@@ -1,0 +1,129 @@
+{% extends "forecast_app/base.html" %}
+{% block content %}
+
+<style>
+.form-page { max-width: 1400px; margin: 24px auto; }
+.form-card { background:#fff; border-radius:16px; padding:32px; box-shadow:0 12px 40px rgba(0,0,0,.08); }
+.bulk-table { width:100%; border-collapse:separate; border-spacing:0 14px; }
+.bulk-table th { font-size:13px; font-weight:600; color:#374151; padding:0 8px; }
+.bulk-table td { padding:10px 8px; }
+.form-control { border-radius:10px; padding:10px 12px; border:1px solid #d1d5db; }
+.primary-btn { background:#22c55e; color:#fff; padding:10px 26px; border-radius:10px; }
+.secondary-btn { background:#f3f4f6; padding:10px 22px; border-radius:10px; }
+.remove-row { background:none; border:none; color:#ef4444; font-size:18px; cursor:pointer; }
+</style>
+
+<a href="{% url 'rectable' %}" class="font-semibold">← Back</a>
+
+<div class="form-page">
+  <div class="form-card">
+    <h2 class="text-xl font-bold mb-2">Add Receivables (Bulk Entry)</h2>
+    <p class="text-gray-500 mb-4">Add multiple receivable records at once</p>
+
+    <form method="post" action="{% url 'recform' %}">
+      {% csrf_token %}
+
+      <table class="bulk-table" id="recTable">
+        <thead>
+          <tr>
+            <th>Party </th>
+            <th>Amount </th>
+            <th>Due Date </th>
+            <th>Description</th>
+            <th>Received</th>
+            <th class="received-date-header" style="display:none;">Received Date</th>
+
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td><input type="text" name="party_name[]" class="form-control" required></td>
+            <td><input type="number" step="0.01" name="amount[]" class="form-control" required></td>
+            <td><input type="date" name="due_date[]" class="form-control" required></td>
+            <td><input type="text" name="description[]" class="form-control"></td>
+            <td class="text-center">
+              <input type="checkbox" name="is_received[]" class="is-received">
+            </td>
+            <td>
+              <input type="date" name="received_date[]" class="form-control received-date" disabled style="display:none;">
+            </td>
+            <td>
+              <button type="button" class="remove-row">×</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="flex justify-between mt-6">
+        <button type="button" class="secondary-btn" id="addRow">+ Add Row</button>
+        <button type="submit" class="primary-btn">Save All Receivables</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function updateReceivedUI(row) {
+  const checkbox = row.querySelector(".is-received");
+  const dateInput = row.querySelector(".received-date");
+
+  if (checkbox.checked) {
+    dateInput.style.display = "block";
+    dateInput.disabled = false;
+  } else {
+    dateInput.style.display = "none";
+    dateInput.disabled = true;
+    dateInput.value = "";
+  }
+
+  updateHeaderVisibility();
+}
+
+function updateHeaderVisibility() {
+  const header = document.querySelector(".received-date-header");
+  const anyChecked = document.querySelectorAll(".is-received:checked").length > 0;
+  header.style.display = anyChecked ? "table-cell" : "none";
+}
+
+document.getElementById("addRow").addEventListener("click", function () {
+  const tbody = document.querySelector("#recTable tbody");
+  const newRow = tbody.rows[0].cloneNode(true);
+
+  newRow.querySelectorAll("input").forEach(input => {
+    if (input.type === "checkbox") {
+      input.checked = false;
+    } else {
+      input.value = "";
+    }
+
+    if (input.classList.contains("received-date")) {
+      input.style.display = "none";
+      input.disabled = true;
+    }
+  });
+
+  tbody.appendChild(newRow);
+});
+
+document.addEventListener("change", function (e) {
+  if (e.target.classList.contains("is-received")) {
+    updateReceivedUI(e.target.closest("tr"));
+  }
+});
+
+document.addEventListener("click", function (e) {
+  if (e.target.classList.contains("remove-row")) {
+    const rows = document.querySelectorAll("#recTable tbody tr");
+    if (rows.length > 1) {
+      e.target.closest("tr").remove();
+      updateHeaderVisibility();
+    }
+  }
+});
+
+document.addEventListener("DOMContentLoaded", updateHeaderVisibility);
+</script>
+
+{% endblock %}

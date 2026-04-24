@@ -1,0 +1,177 @@
+{% extends "forecast_app/base.html" %}
+{% block content %}
+
+<!-- Expense Alert -->
+{% if total_expense_alert %}
+<div id="totalExpensePopup"
+     class="mb-6 p-4 rounded-lg bg-red-50 border-l-4 border-red-500 flex justify-between items-start">
+    <div>
+        <p class="font-semibold text-red-700">
+            ⚠ Total Expense Alert!
+        </p>
+        <p class="text-sm text-gray-700 mt-1">
+            Total expense is <strong>₹{{ total_expense }}</strong>,
+            which is above <strong>₹{{ high_expense_limit }}</strong>.
+        </p>
+    </div>
+    <button onclick="closeTotalExpense()"
+            class="text-red-600 font-bold hover:text-red-800">
+        ✖
+    </button>
+</div>
+{% endif %}
+<style>
+/* ===== Card ===== */
+.table-card{
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 6px 18px rgba(0,0,0,.08);
+  padding:18px;
+}
+
+/* ===== Title ===== */
+.page-title{font-size:26px;font-weight:700;}
+.page-sub{color:#6b7280;font-size:14px;margin-top:-4px;}
+
+/* ===== Table ===== */
+.receivable-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+}
+
+.receivable-table thead th{
+  background:#f8fafc;
+  padding:12px 14px;
+  font-size:14px;
+  font-weight:600;
+  color:#374151;
+  border-bottom:1px solid #e5e7eb;
+  text-align:left;
+}
+
+.receivable-table tbody td{
+  padding:12px 14px;
+  font-size:14px;
+  border-bottom:1px solid #e5e7eb;
+  vertical-align:middle;
+}
+
+/* ===== Amount ===== */
+.amount-red{
+  color:#dc2626;
+  font-weight:700;
+}
+
+/* ===== Buttons ===== */
+.btn-edit{
+  background:#2563eb;
+  color:#fff;
+  border:none;
+  padding:6px 14px;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:600;
+  text-decoration:none;
+}
+.btn-delete{
+  background:#ef4444;
+  color:#fff;
+  border:none;
+  padding:6px 14px;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:600;
+  text-decoration:none;
+}
+
+/* ===== Add Button ===== */
+.action-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:10px 18px;
+  border-radius:999px;
+  font-weight:600;
+  font-size:14px;
+  text-decoration:none;
+  box-shadow:0 4px 10px rgba(0,0,0,.12);
+  transition:.2s;
+}
+.action-red{
+  background:#ef4444;
+  color:#fff;
+}
+.action-red:hover{
+  background:#dc2626;
+  color:#fff;
+}
+</style>
+
+<div class="container-fluid">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <div class="page-title">Expense List</div>
+      <div class="page-sub">Money you spent</div>
+    </div>
+
+    <a href="{% url 'add_expense' %}" class="action-btn action-red">
+      + Add Expense
+    </a>
+  </div>
+
+  <!-- Card -->
+  <div class="table-card">
+
+    <table class="receivable-table">
+      <thead>
+        <tr>
+          <th>Amount</th>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Payment Mode</th>
+          <th>Description</th>
+          <th>Edit</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+
+      <tbody>
+      {% for e in expenses %}
+        <tr>
+          <td class="amount-red">₹{{ e.amount }}</td>
+          <td>{{ e.date|date:"M d, Y" }}</td>
+          <td>{{ e.category.name }}</td>
+          <td>{{ e.payment_mode.name }}</td>
+          <td>{{ e.description|default:"—" }}</td>
+
+          <td>
+            <a href="{% url 'edit_expense' e.id %}" class="btn-edit">
+              Edit
+            </a>
+          </td>
+
+          <td>
+            <a href="{% url 'delete_expense' e.id %}"
+               class="btn-delete"
+               onclick="return confirm('Delete this expense?');">
+              Delete
+            </a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            No expense records found
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+{% endblock %}

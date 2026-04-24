@@ -1,0 +1,148 @@
+<!-- ============================================================================ -->
+<!-- templates/cashflow/base.html - Base Template -->
+<!-- ============================================================================ -->
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cash Flow System{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="/static/css/output.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        .sidebar-active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+
+{% block bar %}
+<body class="bg-gray-50">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="fixed left-0 top-0 h-full w-64 bg-white shadow-lg border-r border-gray-200 z-10">
+            
+            <div class="p-6 border-b border-gray-200">
+                <h1 class="text-2xl font-bold text-gray-800">Cash Flow System</h1>
+            </div>
+
+            <!-- ===== USER INFO ===== -->
+            <div style="
+                padding:16px;
+                border-bottom:1px solid #e5e7eb;
+                display:flex;
+                align-items:center;
+                gap:10px;
+            ">
+                <i class="fas fa-user-circle" style="
+                    font-size:26px;
+                    color:#6f42c1;
+                "></i>
+
+                <div>
+                    <div style="font-size:12px; color:#6b7280;">
+                        Logged in as
+                    </div>
+                    <div style="font-size:14px; font-weight:600; color:#111827;">
+                        {{ request.user.get_full_name|default:request.user.username }}
+                    </div>
+                </div>
+            </div>
+
+            <nav class="p-4">
+                <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all hover:bg-gray-100 {% if request.resolver_match.url_name == 'dashboard' %}sidebar-active{% endif %}">
+                    <i class="fas fa-chart-pie"></i>
+                    <span class="font-medium">Dashboard</span>
+                </a>
+                
+                <a href="{% url 'add_income' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all hover:bg-gray-100 {% if request.resolver_match.url_name == 'add_income' %}sidebar-active{% endif %}">
+                    <i class="fas fa-arrow-trend-up"></i>
+                    <span class="font-medium">Income Entry</span>
+                </a>
+                
+                <a href="{% url 'add_expense' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all hover:bg-gray-100 {% if request.resolver_match.url_name == 'add_expense' %}sidebar-active{% endif %}">
+                    <i class="fas fa-arrow-trend-down"></i>
+                    <span class="font-medium">Expense Entry</span>
+                </a>
+                
+                <a href="{% url 'rp_home' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all hover:bg-gray-100 {% if request.resolver_match.url_name == 'receivables_payables' %}sidebar-active{% endif %}">
+                    <i class="fas fa-list"></i>
+                    <span class="font-medium">Receivables/Payables</span>
+                </a>
+                
+                <a href="{% url 'settable' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all hover:bg-gray-100 {% if request.resolver_match.url_name == 'forecast_analytics' %}sidebar-active{% endif %}">
+                    <i class="fas fa-calendar"></i>
+                    <span class="font-medium">Forecast & Analytics</span>
+                </a>
+                
+                <a href="{% url 'alerts' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all hover:bg-gray-100 {% if request.resolver_match.url_name == 'alerts' %}sidebar-active{% endif %}">
+                    <i class="fas fa-bell"></i>
+                    <span class="font-medium">Alerts & Notifications</span>
+                </a>
+
+                <!-- ===== LOGOUT ===== -->
+                <div style="
+                    margin-top:auto;
+                    padding:50px;
+                    border-top:1px solid #e5e7eb;
+                ">
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" style="
+                            width:100%;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            gap:8px;
+                            font-size:14px;
+                            padding:8px 12px;
+                            border-radius:8px;
+                            border:1px solid #dc3545;
+                            background:transparent;
+                            color:#dc3545;
+                            cursor:pointer;
+                            transition:all 0.2s ease;
+                        "
+                        onmouseover="this.style.background='#dc3545'; this.style.color='#fff';"
+                        onmouseout="this.style.background='transparent'; this.style.color='#dc3545';"
+                        >
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </form>
+                </div>
+            </nav>
+        </aside>
+{% endblock %}
+
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8">
+            {% if messages %}
+                <div class="mb-6">
+                    {% for message in messages %}
+                        <div class="p-4 mb-3 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

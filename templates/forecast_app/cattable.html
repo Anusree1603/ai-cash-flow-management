@@ -1,0 +1,27 @@
+{% extends 'forecast_app/base.html' %}
+{% block content %}
+<div class="container">
+    <h2 class="ms-3" >Category</h2>
+    <table class="table table-bordered border-dark align-middle">
+        <tr>
+            <th>Category</th>
+            <th>Category Type</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+        <tbody>
+                {% for cat in catts %}
+                <tr>
+                    <td>{{cat.category_name}}</td>
+                    <td>{{cat.category_type}}</td>
+                    <td><a href="{% url 'catup' cat.id %}" class="btn btn-primary"><i class="fas fa-eye"></i>Edit</a></td>
+                    <td><a href="{% url 'catdl' cat.id %}" class="btn btn-primary"><i class="fas fa-trash"></i>Delete</a></td>
+               
+            </tr>
+                {% endfor %}
+        </tbody>
+        </tr>
+    </table>
+   <a href="{% url 'catpy' %}" class="btn btn-primary">Add new entry</a>
+</div>
+{% endblock %}

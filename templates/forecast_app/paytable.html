@@ -1,0 +1,177 @@
+{% extends 'forecast_app/base.html' %}
+{% block content %}
+
+<!-- Pending Payable Alert -->
+<!-- {% if pending_payables %}
+<div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg flex justify-between">
+    <div>
+        <p class="font-semibold text-red-700">⚠ Pending Payable Alert</p>
+        <p class="text-sm text-red-600">
+            You have <strong>{{ pending_payables.count }}</strong> pending payable(s)
+        </p>
+        <ul class="text-sm mt-2 list-disc list-inside">
+            {% for p in pending_payables %}
+                <li>{{ p.party_name }} – ₹{{ p.amount }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <button onclick="this.parentElement.remove()" class="text-red-600 font-bold">✖</button>
+</div>
+{% endif %} -->
+
+<!-- Header -->
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h2 class="text-3xl font-bold text-gray-800">Payable List</h2>
+        <p class="text-gray-500 mt-1">Money you need to pay</p>
+    </div>
+
+    <div class="flex gap-3">
+        <a href="{% url 'rp_home' %}"
+           class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition">
+            ← Back
+        </a>
+
+        <a href="{% url 'paypy' %}"
+           class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+            + Add Payable
+        </a>
+    </div>
+</div>
+<!-- Filters Card -->
+<div class="bg-white rounded-xl shadow-md p-5 mb-6">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+
+    <!-- Party Filter -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-600 mb-1">
+        Party
+      </label>
+      <input
+        type="text"
+        name="party"
+        list="partySuggestions"
+        value="{{ party }}"
+        placeholder="Type party name"
+        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+
+      <datalist id="partySuggestions">
+        {% for p in party_list %}
+          <option value="{{ p }}">
+        {% endfor %}
+      </datalist>
+    </div>
+
+    <!-- Due Date Filter -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-600 mb-1">
+        Due Date
+      </label>
+      <input
+        type="date"
+        name="due_date"
+        value="{{ due_date }}"
+        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+    </div>
+
+    <!-- Apply Button -->
+    <div>
+      <button
+        type="submit"
+        class="w-full px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+      >
+        Apply Filters
+      </button>
+    </div>
+
+    <!-- Clear Button -->
+    <div>
+      <a
+        href="{% url 'rectable' %}"
+        class="block text-center px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition"
+      >
+        Clear
+      </a>
+    </div>
+
+  </form>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-xl shadow-md overflow-hidden">
+    <table class="w-full text-sm text-left">
+        <thead class="bg-gray-100 text-gray-700">
+            <tr>
+                <th class="px-4 py-3">Party</th>
+                <th class="px-4 py-3">Amount</th>
+                <th class="px-4 py-3">Due Date</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3">Paid</th>
+                <th class="px-4 py-3">Paid Date</th>
+                <th class="px-4 py-3 text-center">Edit</th>
+                <th class="px-4 py-3 text-center">Delete</th>
+            </tr>
+        </thead>
+
+        <tbody class="divide-y">
+            {% for pay in pays %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-4 py-3 font-medium">{{ pay.party_name }}</td>
+                <td class="px-4 py-3 text-red-600 font-semibold">₹{{ pay.amount }}</td>
+                <td class="px-4 py-3">{{ pay.due_date }}</td>
+
+                <!-- STATUS -->
+                <td class="px-4 py-3">
+                    {% if pay.is_paid %}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                            PAID
+                        </span>
+                    {% else %}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                            PENDING
+                        </span>
+                    {% endif %}
+                </td>
+
+                <!-- BOOLEAN -->
+                <td class="px-4 py-3">
+                    {{ pay.is_paid }}
+                </td>
+
+                <!-- PAID DATE -->
+                <td class="px-4 py-3">
+                    {% if pay.is_paid %}
+                        {{ pay.paid_date }}
+                    {% else %}
+                        None
+                    {% endif %}
+                </td>
+
+                <td class="px-4 py-3 text-center">
+                    <a href="{% url 'payup' pay.id %}"
+                       class="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Edit
+                    </a>
+                </td>
+
+                <td class="px-4 py-3 text-center">
+                    <a href="{% url 'paydl' pay.id %}"
+                       class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center py-6 text-gray-500">
+                    No payables found
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
